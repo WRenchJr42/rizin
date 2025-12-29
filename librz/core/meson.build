@@ -61,6 +61,7 @@ rz_core_sources = [
   'linux_heap_glibc.c',
   'linux_heap_glibc64.c',
   'rop.c',
+  'rop_chain.c',
   'project.c',
   'project_migrate.c',
   'rtr.c',

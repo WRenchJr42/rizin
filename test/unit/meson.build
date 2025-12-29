@@ -99,6 +99,7 @@ if get_option('enable_tests')
     'reg',
     'regex',
     'rop',
+    'rop_chain',
     'rop_constraint',
     'run',
     'rz_test',

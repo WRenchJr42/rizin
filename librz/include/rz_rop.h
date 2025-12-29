@@ -167,6 +167,26 @@ typedef bool (*rz_rop_event_check_fn)(const RzRopRegInfo *);
  */
 extern rz_rop_event_check_fn rz_rop_event_functions[RZ_ROP_EVENT_COUNT];
 
+/**
+ * \brief To set a goal in the ROP chain 
+ */
+typedef struct rz_rop_goal_t {
+    char *register_name;    ///< Target register
+    ut64 value;             ///< Desired value 
+} RzRopGoal;
+
+/**
+ * \brief A compiled ROP chain
+ */
+typedef struct rz_rop_chain_t {
+    RzCore *core;                           ///< Core reference
+    RzList /*<RzRopGoal *>*/ *goals;        ///< User-specified goals
+    RzList /*<RzRopGadgetInfo *>*/ *gadgets; ///< Selected gadgets
+    RzBuffer *buffer;                       ///< Final bytecode
+    ut64 stack_addr;                        ///< Chain Address
+    bool compiled;                          ///< Has compile been called?
+} RzRopChain;
+
 // Command APIs
 RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzRopSearchContext *context);
 RZ_API RzCmdStatus rz_core_rop_gadget_info(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_OWN RzRopSearchContext *context);
@@ -204,6 +224,13 @@ RZ_API RZ_OWN RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_get_reg_info_by_reg_na
 RZ_API bool rz_core_rop_gadget_reg_info_has_event(const RZ_NONNULL RzRopGadgetInfo *gadget_info,
 	RzRopEvent event, const RZ_NULLABLE char *reg_name);
 RZ_API RZ_OWN RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_reg_info_find(const RZ_NONNULL RzRopGadgetInfo *gadget_info, const RZ_NONNULL char *name);
+
+// ROP Chain APIs
+RZ_API RZ_OWN RzRopChain *rz_core_rop_chain_new(RZ_NONNULL RzCore *core, ut64 stack_addr);
+RZ_API void rz_core_rop_chain_free(RZ_NULLABLE RzRopChain *chain);
+RZ_API bool rz_core_rop_chain_add_goal(RZ_NONNULL RzRopChain *chain, RZ_NONNULL const char *reg, ut64 value);
+RZ_API bool rz_core_rop_chain_compile(RZ_NONNULL RzRopChain *chain);
+RZ_API RZ_BORROW const ut8 *rz_core_rop_chain_get_bytes(RZ_NONNULL RzRopChain *chain, RZ_NONNULL RZ_OUT size_t *size);
 
 #ifdef __cplusplus
 }
