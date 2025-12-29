@@ -19,7 +19,7 @@ static void cleanup_test_core(RzCore *core) {
     rz_core_free(core);
 }
 
-// Test 1: Can we create an empty chain?
+// Test 1: Create empty chain.
 bool test_rop_chain_create(void) {
     RzCore *core = setup_test_core();
 
@@ -30,21 +30,29 @@ bool test_rop_chain_create(void) {
     cleanup_test_core(core);
     mu_end;
 }
-/*
-// Test 2: Can we add a simple goal (set rax=0x3b)?
-bool test_rop_chain_simple_goal(void) {
+
+// Test 2: Add a simple goal.
+bool test_rop_chain_goal(void) {
     RzCore *core = setup_test_core();
 
-    // RzRopChain *chain = rz_core_rop_chain_new(core);
-    // rz_core_rop_chain_add_goal(chain, "rax", 0x3b);
-    
-    // Should find "pop rax; ret" gadget automatically
-    // mu_assert("Should have found pop rax gadget", chain->gadgets->length > 0);
+    // Goal: Set rax = 0x3b (syscall number for execve)
+    RzRopChain *chain = rz_core_rop_chain_new(core,0x7fffffffffff);
+    bool success = rz_core_rop_chain_add_goal(chain, "rax", 0x3b);
+    mu_assert("Failed to add goal to ROP chain", success);
+
+    //Verify 
+    mu_assert_eq(rz_list_length(chain->goals), 1, "Goal count mismatch");
+    RzRopGoal *goal = (RzRopGoal *)rz_list_get_n(chain->goals, 0);
+    mu_assert_notnull(goal, "Goal is null");
+    mu_assert_streq(goal->register_name, "rax", "Goal register mismatch");
+    mu_assert_eq(goal->value, 0x3b, "Goal value mismatch");
+    rz_core_rop_chain_free(chain);
+
     
     cleanup_test_core(core);
     mu_end;
 }
-
+/*
 // Test 3: Can we compile a chain with multiple goals?
 bool test_rop_chain_multi_goal(void) {
     RzCore *core = setup_test_core();
@@ -81,7 +89,7 @@ bool test_rop_chain_structure(void) {
 
 int all_tests(void) {
     mu_run_test(test_rop_chain_create);
-    //mu_run_test(test_rop_chain_simple_goal);
+    mu_run_test(test_rop_chain_goal);
     //mu_run_test(test_rop_chain_multi_goal);
     //mu_run_test(test_rop_chain_structure);
     return tests_passed != tests_run;
