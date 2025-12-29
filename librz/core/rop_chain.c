@@ -98,7 +98,7 @@ void rz_core_rop_chain_free(RZ_NULLABLE RzRopChain *chain) {
         return NULL;
     }
     ut64 size64 = 0;
-    const ut8 *data = rz_buf_data(chain->buffer, &size64);  // ← Fixed: needs 2 args
+    const ut8 *data = rz_buf_data(chain->buffer, &size64);  
     *size = (size_t)size64;
     return data;
 }
