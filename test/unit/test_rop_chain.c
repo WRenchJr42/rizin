@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 Yashas <yashas140304@gmail.com>
+// SPDX-FileCopyrightText: 2025 WRenchJr42 <yashas140304@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_rop.h> 
@@ -52,23 +52,26 @@ bool test_rop_chain_goal(void) {
     cleanup_test_core(core);
     mu_end;
 }
-/*
-// Test 3: Can we compile a chain with multiple goals?
-bool test_rop_chain_multi_goal(void) {
+
+// Test 3: Compile chain.
+bool test_rop_chain_compile(void) {
     RzCore *core = setup_test_core();
     
-    // RzRopChain *chain = rz_core_rop_chain_new(core);
-    // rz_core_rop_chain_add_goal(chain, "rax", 0x3b);  // syscall num
-    // rz_core_rop_chain_add_goal(chain, "rdi", 0x1000); // arg1
+    RzRopChain *chain = rz_core_rop_chain_new(core, 0x7fffffffffff);
+    rz_core_rop_chain_add_goal(chain, "rax", 0x3b);  // syscall num
+   
+    bool success = rz_core_rop_chain_compile(chain);
+    mu_assert("Chain compilation should succeed", success);
+    size_t chain_size;
+    const ut8 *chain_bytes = rz_core_rop_chain_get_bytes(chain, &chain_size);
+    mu_assert_notnull(chain_bytes, "Chain bytes should not be null");
+    mu_assert("Chain should have 16 bytes (addr + value)", chain_size == 16);
     
-    // bool success = rz_core_rop_chain_compile(chain);
-    // mu_assert("Chain compilation failed", success);
-    // mu_assert("Chain should have 4+ gadgets", chain->gadgets->length >= 4);
-    
+    rz_core_rop_chain_free(chain);
     cleanup_test_core(core);
     mu_end;
 }
-
+/*
 // Test 4: Does the chain have correct structure?
 bool test_rop_chain_structure(void) {
     RzCore *core = setup_test_core();
@@ -90,7 +93,7 @@ bool test_rop_chain_structure(void) {
 int all_tests(void) {
     mu_run_test(test_rop_chain_create);
     mu_run_test(test_rop_chain_goal);
-    //mu_run_test(test_rop_chain_multi_goal);
+    mu_run_test(test_rop_chain_compile);
     //mu_run_test(test_rop_chain_structure);
     return tests_passed != tests_run;
 }
