@@ -71,43 +71,102 @@ bool test_rop_chain_compile(void) {
     cleanup_test_core(core);
     mu_end;
 }
-/*
-// Test 4: Does the chain have correct structure?
+
+// Test 4: Chain structure verification.
 bool test_rop_chain_structure(void) {
     RzCore *core = setup_test_core();
+    RzRopChain *chain = rz_core_rop_chain_new(core, 0x7fffffffffff);
+    rz_core_rop_chain_add_goal(chain, "rax", 0x3b);  
+    bool success = rz_core_rop_chain_compile(chain);
+    mu_assert("Chain compilation should succeed", success);
+    size_t chain_size;
+    const ut8 *chain_bytes = rz_core_rop_chain_get_bytes(chain, &chain_size);
+    mu_assert_notnull(chain_bytes, "Chain bytes should not be null");
+    mu_assert("Chain should have 16 bytes", chain_size == 16);
+
+    ut64 gadget_addr = 0;
+    for (int i = 0; i < 8; i++) {
+        gadget_addr |= ((ut64)chain_bytes[i]) << (i * 8);
+    }
+
+    // Extract value (next 8 bytes, little-endian)
+    ut64 value = 0;
+    for (int i = 0; i < 8; i++) {
+        value |= ((ut64)chain_bytes[8 + i]) << (i * 8);
+    }
     
-    // RzRopChain *chain = rz_core_rop_chain_new(core);
-    // rz_core_rop_chain_add_goal(chain, "rax", 0x5);
-    // rz_core_rop_chain_compile(chain);
+    // Verify the value is what we set
+    mu_assert_eq(value, 0x3b, "Value should be 0x3b");
+
+
+    // Verify gadget address
+    mu_assert("Gadget address should be non-zero", gadget_addr != 0);
+    mu_assert("Gadget address should be < 0x100000000", gadget_addr < 0x100000000);
     
-    // Expected structure:
-    // [gadget_addr, 0x5]  // pop rax; ret + value
+    // Log the gadget address and value
+    printf("Found gadget at: 0x%016llx\n", (unsigned long long)gadget_addr);
+    printf("With value: 0x%016llx\n", (unsigned long long)value);
     
-    // ut8 *bytes = rz_core_rop_chain_get_bytes(chain);
-    // mu_assert_notnull(bytes, "No chain bytes generated");
+    rz_core_rop_chain_free(chain);
     
     cleanup_test_core(core);
     mu_end;
-}*/
+}
+
+// Test 5 : Multiple reggister goals.
+
+bool test_rop_chain_multiple_goals(void) {
+    RzCore *core = setup_test_core();
+    RzRopChain *chain = rz_core_rop_chain_new(core, 0x7fffffffffff);
+    rz_core_rop_chain_add_goal(chain, "rax", 0x3b);  
+    rz_core_rop_chain_add_goal(chain, "rdi", 0x7fffffffe000);  
+    bool success = rz_core_rop_chain_compile(chain);
+    mu_assert("Chain compilation should succeed", success);
+    size_t chain_size;
+    const ut8 *chain_bytes = rz_core_rop_chain_get_bytes(chain, &chain_size);
+    mu_assert_notnull(chain_bytes, "Chain bytes should not be null");
+    mu_assert("Chain should have 32 bytes", chain_size == 32);
+
+    // Extract first gadget address
+    ut64 gadget1_addr = 0;
+    for (int i = 0; i < 8; i++) {
+        gadget1_addr |= ((ut64)chain_bytes[i]) << (i * 8);
+    }
+    // Extract first value
+    ut64 value1 = 0;
+    for (int i = 0; i < 8; i++) {
+        value1 |= ((ut64)chain_bytes[8 + i]) << (i * 8);
+    }
+    // Extract second gadget address
+    ut64 gadget2_addr = 0;
+    for (int i = 0; i < 8; i++) {
+        gadget2_addr |= ((ut64)chain_bytes[16 + i]) << (i * 8);
+    }
+    // Extract second value
+    ut64 value2 = 0;
+    for (int i = 0; i < 8; i++) {
+        value2 |= ((ut64)chain_bytes[24 + i]) << (i * 8);
+    }
+
+    // Verify values
+    mu_assert_eq(value1, 0x3b, "First value should be 0x3b");
+    mu_assert_eq(value2, 0x7fffffffe000, "Second value should be 0x7fffffffe000");
+    printf("Gadget 1 at: 0x%016llx with value: 0x%016llx\n", (unsigned long long)gadget1_addr, (unsigned long long)value1);
+    printf("Gadget 2 at: 0x%016llx with value: 0x%016llx\n", (unsigned long long)gadget2_addr, (unsigned long long)value2);     
+
+    rz_core_rop_chain_free(chain);
+    
+    cleanup_test_core(core);
+    mu_end;
+}
 
 int all_tests(void) {
     mu_run_test(test_rop_chain_create);
     mu_run_test(test_rop_chain_goal);
     mu_run_test(test_rop_chain_compile);
-    //mu_run_test(test_rop_chain_structure);
+    mu_run_test(test_rop_chain_structure);
+    mu_run_test(test_rop_chain_multiple_goals);
     return tests_passed != tests_run;
 }
 mu_main(all_tests);
 
-
-/*bool test_placeholder(void) {
-    mu_assert("placeholder", 1 == 1);
-    mu_end;
-}
-
-bool all_tests(void) {
-    mu_run_test(test_placeholder);
-    return tests_passed != tests_run;
-}
-
-mu_main(all_tests)*/
