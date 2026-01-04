@@ -65,7 +65,7 @@ bool test_rop_chain_compile(void) {
     size_t chain_size;
     const ut8 *chain_bytes = rz_core_rop_chain_get_bytes(chain, &chain_size);
     mu_assert_notnull(chain_bytes, "Chain bytes should not be null");
-    mu_assert("Chain should have 16 bytes (addr + value)", chain_size == 16);
+    mu_assert("Chain should have 16 bytes", chain_size == 16);
     
     rz_core_rop_chain_free(chain);
     cleanup_test_core(core);
